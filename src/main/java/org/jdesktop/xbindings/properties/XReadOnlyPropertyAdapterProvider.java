@@ -1,22 +1,39 @@
 package org.jdesktop.xbindings.properties;
 
 import java.beans.PropertyChangeListener;
+import java.lang.reflect.Field;
 
 import org.jdesktop.beansbinding.ext.BeanAdapterProvider;
 import org.jdesktop.swingbinding.adapters.BeanAdapterBase;
+import org.jdesktop.xbindings.XBindingOptions;
 import org.jdesktop.xbindings.XNotifyPropertyChanged;
-import org.jdesktop.xbindings.properties.XPropertyAdapterProvider.Adapter;
 
 public class XReadOnlyPropertyAdapterProvider implements BeanAdapterProvider {
 
 	@Override
-	public boolean providesAdapter(Class<?> type, String property) {				
-		try {
-			return XReadOnlyProperty.class.isAssignableFrom(type.getField(property).getType());
-		} catch (NoSuchFieldException e) {
-			// there is no XReadOnlyProperty with this name
+	public boolean providesAdapter(Class<?> type, String property) {
+
+		if (!XBindingOptions.getActive().areXPropertiesEnabled()) {
 			return false;
 		}
+
+		Field f = tryGetField(type, property);
+		if (f != null) {
+			return XReadOnlyProperty.class.isAssignableFrom(f.getType());
+		} else {
+			return false;
+		}
+	}
+
+	private static Field tryGetField(Class<?> type, String fieldName) {
+		Field[] fields = type.getFields();
+		for(int i = 0; i < fields.length; i++)
+		{
+			if (fields[i].getName().equals(fieldName)) {
+				return fields[i];
+			}
+		}
+		return null;
 	}
 
 	@Override

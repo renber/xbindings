@@ -9,6 +9,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
@@ -28,6 +29,7 @@ import javax.swing.SwingUtilities;
 import org.jdesktop.beansbinding.BeanProperty;
 import org.jdesktop.xbindings.BindingContext;
 import org.jdesktop.xbindings.PropertyChangeSupportBase;
+import org.jdesktop.xbindings.XBinding;
 import org.jdesktop.xbindings.context.DataContext;
 
 /**
@@ -36,7 +38,7 @@ import org.jdesktop.xbindings.context.DataContext;
  *
  * @author berre
  */
-public class CommandManager {
+public class CommandManager implements XBinding {
 
 	/** Interval in which the commands canExecute() method is evaluated in milliseconds */
 	private static final int COMMAND_CHECK_INTERVAL = 150;
@@ -94,16 +96,24 @@ public class CommandManager {
 	
 	/**
 	 * Requery all registered commands to check whether
-	 * their canExecuet flag has changed
+	 * their canExecute flag has changed
 	 */
 	private static void requeryCommands() {		
-		for (Command cmd : monitoredCommands.keySet()) {
-			cmd.updateExecutable();
-		}				
+		try {
+			for (Command cmd : monitoredCommands.keySet()) {
+				if (cmd != null) {
+					cmd.updateExecutable();
+				}
+			}	
+		} catch (ConcurrentModificationException e)
+		{
+			// requery the new, modified list of commands
+			requeryCommands();
+		}
 	}
 	
 	/**
-	 * Indicate to the CommandManager that all the canExecute state
+	 * Indicate to the CommandManager that all the canExecute states
 	 * of all Commands should be updated 
 	 */
 	public static void suggestRequeryCommands() {
@@ -406,6 +416,21 @@ public class CommandManager {
 		public CommandObject(Command initialCommand) {
 			currentCommand = initialCommand;			
 		}
+	}
+
+	@Override
+	public void bind() {
+		start();
+	}
+
+	@Override
+	public void unbind() {
+		stop();
+	}
+
+	@Override
+	public boolean isBound() {
+		return isStarted;
 	}
 }
 

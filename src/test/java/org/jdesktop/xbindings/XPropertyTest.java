@@ -18,14 +18,17 @@ import org.junit.Test;
 public class XPropertyTest {
 
 	@Test
-	public void test_getDefault() {		
+	public void test_getDefault() {
+		XBindingOptions.getActive().setXPropertiesEnabled(true);
+
 		TestViewModel vm = new TestViewModel();
 		assertEquals(Integer.valueOf(5), vm.number.get());	
 	}
 	
 	@Test
 	public void test_set() {
-		
+		XBindingOptions.getActive().setXPropertiesEnabled(true);
+
 		TestViewModel vm = new TestViewModel();
 		
 		vm.number.set(10);
@@ -37,7 +40,8 @@ public class XPropertyTest {
 	
 	@Test
 	public void test_propertyChangeNotification() {
-		
+		XBindingOptions.getActive().setXPropertiesEnabled(true);
+
 		TestViewModel vm = new TestViewModel();
 		
 		AtomicBoolean wasRaised = new AtomicBoolean(false);
@@ -53,6 +57,8 @@ public class XPropertyTest {
 	
 	@Test
 	public void test_sameValue_noPropertyChangeNotification() {
+		XBindingOptions.getActive().setXPropertiesEnabled(true);
+
 		TestViewModel vm = new TestViewModel();		
 		AtomicBoolean wasRaised = new AtomicBoolean(false);
 		
@@ -66,6 +72,8 @@ public class XPropertyTest {
 	
 	@Test
 	public void test_BeanProperty_get() {
+		XBindingOptions.getActive().setXPropertiesEnabled(true);
+
 		TestViewModel vm = new TestViewModel();	
 		BeanProperty prop = BeanProperty.create("number");
 		assertEquals(Integer.valueOf(5), prop.getValue(vm));				
@@ -73,6 +81,8 @@ public class XPropertyTest {
 	
 	@Test
 	public void test_BeanProperty_set() {
+		XBindingOptions.getActive().setXPropertiesEnabled(true);
+
 		TestViewModel vm = new TestViewModel();	
 		BeanProperty prop = BeanProperty.create("number");
 		prop.setValue(vm, new Integer(10));
@@ -81,6 +91,8 @@ public class XPropertyTest {
 	
 	@Test
 	public void test_BeanProperty_nestedXProperty_get() {
+		XBindingOptions.getActive().setXPropertiesEnabled(true);
+
 		TestViewModel vm = new TestViewModel();	
 		BeanProperty prop = BeanProperty.create("child.childText");
 		assertEquals("I am the child", prop.getValue(vm));			
@@ -88,6 +100,8 @@ public class XPropertyTest {
 	
 	@Test
 	public void test_BeanProperty_nestedXProperty_set() {
+		XBindingOptions.getActive().setXPropertiesEnabled(true);
+
 		TestViewModel vm = new TestViewModel();	
 		BeanProperty prop = BeanProperty.create("child.childText");
 		prop.setValue(vm, "I am all grown up now");
@@ -97,7 +111,8 @@ public class XPropertyTest {
 	
 	@Test
 	public void test_binding_read() {
-		
+		XBindingOptions.getActive().setXPropertiesEnabled(true);
+
 		TestViewModel vm = new TestViewModel();		
 		BindingContext context = new BindingContext();
 		JButton btn = new JButton();
@@ -113,6 +128,7 @@ public class XPropertyTest {
 	
 	@Test
 	public void test_binding_write() {
+		XBindingOptions.getActive().setXPropertiesEnabled(true);
 		
 		TestViewModel vm = new TestViewModel();		
 		BindingContext context = new BindingContext();

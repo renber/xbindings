@@ -3,17 +3,18 @@ package org.jdesktop.xbindings;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JList;
-import javax.swing.JTable;
-import javax.swing.ListSelectionModel;
+import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import org.jdesktop.beansbinding.BeanProperty;
+import org.jdesktop.beansbinding.PropertyHelper;
 import org.jdesktop.beansbinding.PropertyStateEvent;
 import org.jdesktop.beansbinding.PropertyStateListener;
 import org.jdesktop.observablecollections.ObservableList;
 import org.jdesktop.observablecollections.ObservableListListener;
+import org.jdesktop.xbindings.context.BeansDataContext;
+import org.jdesktop.xbindings.context.DataContext;
 
 /**
  * Class which helps in creating two-way bindings of the selection of a list to
@@ -27,51 +28,85 @@ public abstract class XSelectionBinding implements XBinding {
 	/**
 	 * The view model source list (which is bound to the List)
 	 */
-	protected List sourceList;
+	protected DataContext sourceListContext;	
 
 	/**
 	 * The target selection model to bind to
 	 */
 	protected ListSelectionModel targetSelectionModel;
 
+	final List emptyList = new ArrayList(0);
+	
 	/**
 	 * The selection listener of the target
 	 */
 	protected ListSelectionListener targetListSelectionListener;
 
-	protected XSelectionBinding(List sourceList, ListSelectionModel targetSelectionModel) {
-		if (sourceList == null)
-			throw new IllegalArgumentException("Parameter sourceList must not be null");
+	protected XSelectionBinding(DataContext sourceListContext, ListSelectionModel targetSelectionModel) {
+		if (sourceListContext == null)
+			throw new IllegalArgumentException("Parameter sourceListContext must not be null");
 		if (targetSelectionModel == null)
 			throw new IllegalArgumentException("Parameter targetSelectionModel must not be null");
 
-		this.sourceList = sourceList;
+		this.sourceListContext = sourceListContext;
 		this.targetSelectionModel = targetSelectionModel;
+	}	
+	
+	protected List getSourceList() {
+		Object o = sourceListContext.getValue();
+		if (o == null || !(o instanceof List))
+			return emptyList;
+		else
+			return (List)o;
 	}
-
+	
 	/**
 	 * Two-way binds the selected element (single selection) of the given JList
 	 * to the property of source
 	 */
 	public static XSelectionBinding bindSingleSelection(Object source, String sourceProperty, List sourceList, JList list) {
-		XSingleSelectionBinding bnd = new XSingleSelectionBinding(source, BeanProperty.create(sourceProperty), sourceList, list.getSelectionModel());
+		XSingleSelectionBinding bnd = new XSingleSelectionBinding(source, BeanProperty.create(sourceProperty), new BeansDataContext(sourceList), list.getSelectionModel());
 		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		bnd.bind();
 
 		return bnd;
 	}
+	
+	/**
+	 * Two-way binds the selected element (single selection) of the given JList
+	 * to the given dataContext
+	 */
+	public static XSelectionBinding bindSingleSelection(DataContext selectedItemContext, DataContext sourceListContext, JList list) {
+		XSingleSelectionBinding bnd = new XSingleSelectionBinding(selectedItemContext.getSource(), selectedItemContext.getPropertyHelper(), sourceListContext, list.getSelectionModel());
+		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		bnd.bind();
+
+		return bnd;
+	}	
 
 	/**
 	 * Two-way binds the selected (row) element (single selection) of the given
 	 * JTable to the property of source
 	 */
 	public static XSelectionBinding bindSingleSelection(Object source, String sourceProperty, List sourceList, JTable table) {
-		XSingleSelectionBinding bnd = new XTableSingleSelectionBinding(source, BeanProperty.create(sourceProperty), sourceList, table);
+		XSingleSelectionBinding bnd = new XTableSingleSelectionBinding(source, BeanProperty.create(sourceProperty), new BeansDataContext(sourceList), table);
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		bnd.bind();
 
 		return bnd;
 	}
+	
+	/**
+	 * Two-way binds the selected row element (single selection) of the given JTable
+	 * to the given dataContext
+	 */
+	public static XSelectionBinding bindSingleSelection(DataContext selectedItemContext, DataContext sourceListContext, JTable table) {		
+		XSingleSelectionBinding bnd = new XTableSingleSelectionBinding(selectedItemContext.getSource(), selectedItemContext.getPropertyHelper(), sourceListContext, table);
+		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		bnd.bind();
+
+		return bnd;
+	}	
 	
 	/**
 	 * Two-way binds the selected elements (multiple selection) of the given JList
@@ -81,7 +116,7 @@ public abstract class XSelectionBinding implements XBinding {
 	 * @param list The target JList whose selection shall be bound
 	 */
 	public static XSelectionBinding bindMultiSelection(ObservableList sourceList, ObservableList selectedItemsList, JList list) {
-		XMultiSelectionBinding bnd = new XMultiSelectionBinding(sourceList, selectedItemsList, list.getSelectionModel());
+		XMultiSelectionBinding bnd = new XMultiSelectionBinding(new BeansDataContext(sourceList), selectedItemsList, list.getSelectionModel());
 		list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		bnd.bind();
 		
@@ -96,12 +131,27 @@ public abstract class XSelectionBinding implements XBinding {
 	 * @param table The target JTable whose selection shall be bound
 	 */
 	public static XSelectionBinding bindMultiSelection(ObservableList sourceList, ObservableList selectedItemsList, JTable table) {
-		XTableMultiSelectionBinding bnd = new XTableMultiSelectionBinding(sourceList, selectedItemsList, table);
+		XTableMultiSelectionBinding bnd = new XTableMultiSelectionBinding(new BeansDataContext(sourceList), selectedItemsList, table);
 		table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		bnd.bind();
 		
 		return bnd;
-	}	
+	}
+
+	/**
+	 * Two-way binds the selected (row) elements (multiple selection) of the given JTable
+	 * to selectedItemsList
+	 * @param sourceListContext The source list data context (containing all elements)
+	 * @param selectedItemsList The list which should be synchronized with the selected items
+	 * @param table The target JTable whose selection shall be bound
+	 */
+	public static XSelectionBinding bindMultiSelection(DataContext sourceListContext, ObservableList selectedItemsList, JTable table) {
+		XTableMultiSelectionBinding bnd = new XTableMultiSelectionBinding(sourceListContext, selectedItemsList, table);
+		table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		bnd.bind();
+
+		return bnd;
+	}
 
 	@Override
 	public boolean isBound() {
@@ -116,10 +166,10 @@ public abstract class XSelectionBinding implements XBinding {
 	 * Return the element of the source list for the given (view) index
 	 */
 	protected Object getSourceElementForIndex(int index) {
-		if (index < 0 || index >= sourceList.size())
+		if (index < 0 || index >= getSourceList().size())
 			return null;
 
-		return sourceList.get(index);
+		return getSourceList().get(index);
 	}
 
 	/**
@@ -129,7 +179,7 @@ public abstract class XSelectionBinding implements XBinding {
 		if (element == null)
 			return -1;
 
-		return sourceList.indexOf(element);
+		return getSourceList().indexOf(element);
 	}
 }
 
@@ -146,8 +196,8 @@ class XTableMultiSelectionBinding extends XMultiSelectionBinding {
 	 */
 	JTable targetTable;
 	
-	protected XTableMultiSelectionBinding(ObservableList sourceList, ObservableList selectedItemsList, JTable targetTable) {
-		super(sourceList, selectedItemsList, targetTable.getSelectionModel());
+	protected XTableMultiSelectionBinding(DataContext sourceListContext, ObservableList selectedItemsList, JTable targetTable) {
+		super(sourceListContext, selectedItemsList, targetTable.getSelectionModel());
 		
 		this.targetTable = targetTable;
 	}
@@ -159,10 +209,10 @@ class XTableMultiSelectionBinding extends XMultiSelectionBinding {
 
 		index = targetTable.convertRowIndexToModel(index);
 
-		if (index < 0 || index >= sourceList.size())
+		if (index < 0 || index >= getSourceList().size())
 			return null;
 
-		return sourceList.get(index);
+		return getSourceList().get(index);
 	}
 
 	@Override
@@ -170,7 +220,7 @@ class XTableMultiSelectionBinding extends XMultiSelectionBinding {
 		if (element == null)
 			return -1;
 
-		int idx = sourceList.indexOf(element);
+		int idx = getSourceList().indexOf(element);
 		if (idx == -1)
 			return -1;
 
@@ -195,8 +245,8 @@ class XMultiSelectionBinding extends XSelectionBinding {
 	// true, if currently an update from source -> target is carried out
 	protected boolean isAdjustingTarget = false;	
 
-	protected XMultiSelectionBinding(ObservableList sourceList, ObservableList selectedItemsList, ListSelectionModel targetSelectionModel) {
-		super(sourceList, targetSelectionModel);
+	protected XMultiSelectionBinding(DataContext sourceListContext, ObservableList selectedItemsList, ListSelectionModel targetSelectionModel) {
+		super(sourceListContext, targetSelectionModel);
 		
 		if (selectedItemsList == null)
 			throw new IllegalArgumentException("Parameter selectedItemsList must not be null");
@@ -291,6 +341,9 @@ class XMultiSelectionBinding extends XSelectionBinding {
 
 		targetSelectionModel.addListSelectionListener(targetListSelectionListener);
 		selectedItemsList.addObservableListListener(selectedItemsListListener);
+
+		// set initial selection
+		SwingUtilities.invokeLater( () -> selectedItemsListListener.listElementsAdded(selectedItemsList, 0, selectedItemsList.size()) );
 	}
 
 	@Override
@@ -320,8 +373,8 @@ class XTableSingleSelectionBinding extends XSingleSelectionBinding {
 	 */
 	JTable targetTable;
 
-	public XTableSingleSelectionBinding(Object source, BeanProperty sourceProperty, List sourceList, JTable targetTable) {
-		super(source, sourceProperty, sourceList, targetTable.getSelectionModel());
+	public XTableSingleSelectionBinding(Object source, PropertyHelper sourceProperty, DataContext sourceListContext, JTable targetTable) {
+		super(source, sourceProperty, sourceListContext, targetTable.getSelectionModel());
 
 		this.targetTable = targetTable;
 	}
@@ -333,10 +386,10 @@ class XTableSingleSelectionBinding extends XSingleSelectionBinding {
 
 		index = targetTable.convertRowIndexToModel(index);
 
-		if (index < 0 || index >= sourceList.size())
+		if (index < 0 || index >= getSourceList().size())
 			return null;
 
-		return sourceList.get(index);
+		return getSourceList().get(index);
 	}
 
 	@Override
@@ -344,7 +397,7 @@ class XTableSingleSelectionBinding extends XSingleSelectionBinding {
 		if (element == null)
 			return -1;
 
-		int idx = sourceList.indexOf(element);
+		int idx = getSourceList().indexOf(element);
 		if (idx == -1)
 			return -1;
 
@@ -361,22 +414,22 @@ class XTableSingleSelectionBinding extends XSingleSelectionBinding {
 class XSingleSelectionBinding extends XSelectionBinding {
 
 	/**
-	 * The object who contains the source property
+	 * The object which contains the source property
 	 */
 	protected Object source;
 
 	/**
 	 * The (source) property to which to bind the selected item to
 	 */
-	protected BeanProperty sourceProperty;
+	protected PropertyHelper sourceProperty;
 
 	/**
 	 * The listener to listen for changes of the source property
 	 */
 	protected PropertyStateListener sourceListener;
 
-	public XSingleSelectionBinding(Object source, BeanProperty sourceProperty, List sourceList, ListSelectionModel targetSelectionModel) {
-		super(sourceList, targetSelectionModel);
+	public XSingleSelectionBinding(Object source, PropertyHelper sourceProperty, DataContext sourceListContext, ListSelectionModel targetSelectionModel) {
+		super(sourceListContext, targetSelectionModel);
 
 		if (source == null)
 			throw new IllegalArgumentException("Parameter source must not be null");

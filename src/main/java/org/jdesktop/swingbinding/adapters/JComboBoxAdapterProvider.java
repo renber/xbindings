@@ -36,6 +36,8 @@ import java.awt.event.*;
 import java.beans.*;
 
 import javax.swing.*;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
 
 
 /**
@@ -66,13 +68,37 @@ public final class JComboBoxAdapterProvider implements BeanAdapterProvider {
         private JComboBox combo;
         private Handler handler;
         private Object cachedItem;
+        private ListDataListener listDataListener;
 
         private Adapter(JComboBox combo) {
             super(SELECTED_ITEM_P);
             this.combo = combo;
+
+            listDataListener = new ListDataListener() {
+                @Override
+                public void intervalAdded(ListDataEvent e) {
+                }
+
+                @Override
+                public void intervalRemoved(ListDataEvent e) {
+                }
+
+                @Override
+                public void contentsChanged(ListDataEvent e) {
+                    // fix: when the items of the combobox change remove the cached selection
+                    cachedItem = null;
+                }
+            };
         }
 
         public Object getSelectedItem() {
+        	// added by renber
+        	// do not change the source property to null
+        	// when the combobox has no selection (most likely because its items are in the event of being swapped out)
+        	// users cannot deliberately set a combobox to null
+        	if (combo.getSelectedItem() == null)
+        		return cachedItem;
+        	
             return combo.getSelectedItem();
         }
 
@@ -82,23 +108,29 @@ public final class JComboBoxAdapterProvider implements BeanAdapterProvider {
 
         protected void listeningStarted() {
             handler = new Handler();
-            cachedItem = combo.getSelectedItem();
+            // fix by renber: set to null, do not assume the state of the ComboBox before binding
+            cachedItem = null;
             combo.addActionListener(handler);
             combo.addPropertyChangeListener("model", handler);
+            combo.getModel().addListDataListener(listDataListener);
         }
 
         protected void listeningStopped() {
             combo.removeActionListener(handler);
             combo.removePropertyChangeListener("model", handler);
+            combo.getModel().removeListDataListener(listDataListener);
             handler = null;
             cachedItem = null;
         }
 
         private class Handler implements ActionListener, PropertyChangeListener {
             private void comboSelectionChanged() {
-                Object oldValue = cachedItem;
-                cachedItem = getSelectedItem();
-                firePropertyChange(oldValue, cachedItem);
+	           Object oldValue = cachedItem;
+	           Object selected = getSelectedItem();
+	           if (selected != null) {
+	              	cachedItem = selected;
+	           }
+	           firePropertyChange(oldValue, selected);
             }
 
             public void actionPerformed(ActionEvent ae) {

@@ -317,12 +317,15 @@ public final class JComboBoxBinding<E, SS, TS> extends AutoBinding<SS, List<E>, 
                     selectedModelIndex = -1;
                     selectedItem = null;
                 }
-            } else {
+            }
+            // fix: do not automatically select the first item
+            // as this may change the bound selected item of the ComboBox
+            /*else {
                 if (selectedItem == null) {
                     selectedModelIndex = 0;
                     selectedItem = getElementAt(selectedModelIndex);
                 }
-            }
+            }*/
 
             allChanged();
         }
@@ -377,9 +380,11 @@ public final class JComboBoxBinding<E, SS, TS> extends AutoBinding<SS, List<E>, 
                 listeners.get(i).intervalAdded(e);
             }
 
+            // fix: do not automatically select items
+            /*
             if ((size() == length) && (selectedItem == null)) {
                 setSelectedItem(getElementAt(0));
-            }
+            }*/
         }
 
         protected void removed(int index, int length) {
@@ -398,9 +403,11 @@ public final class JComboBoxBinding<E, SS, TS> extends AutoBinding<SS, List<E>, 
                     (selectedModelIndex < (index + length))) {
                 if (size() == 0) {
                     setSelectedItem(null);
-                } else {
-                    setSelectedItem(getElementAt(Math.max(index - 1, 0)));
                 }
+                // fix: do not automatically select items
+                /*else {
+                    setSelectedItem(getElementAt(Math.max(index - 1, 0)));
+                }*/
             }
         }
 

@@ -26,7 +26,10 @@ class DefaultControlFactory implements TemplatingControlFactory {
 		if (v instanceof Component) {			
 			return (Component)v;
 		} else {			
-			return new JLabel(v != null ? v.toString() : "");									
+			JLabel lbl = new JLabel(v != null ? v.toString() : "");
+			// inherit foreground color from container
+			lbl.setForeground(null);
+			return lbl;
 		}
 	}
 

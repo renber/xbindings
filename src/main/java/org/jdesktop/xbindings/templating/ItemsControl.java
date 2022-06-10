@@ -1,16 +1,23 @@
 package org.jdesktop.xbindings.templating;
 
 import java.awt.Component;
+import java.awt.Container;
+import java.awt.Graphics;
+import java.awt.LayoutManager;
 import java.beans.Beans;
 import java.util.List;
 
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
+import javax.swing.RepaintManager;
 
 import org.jdesktop.observablecollections.ObservableList;
 import org.jdesktop.observablecollections.ObservableListListener;
+import org.jdesktop.xbindings.XBinding;
 import org.jdesktop.xbindings.context.BeansDataContext;
 import org.jdesktop.xbindings.context.DataContext;
+
+import net.miginfocom.swing.MigLayout;
 
 /**
  * A swing container which dynamically creates its children based on a (bound) ObservableList
@@ -30,8 +37,7 @@ public class ItemsControl extends TemplatingParent<ObservableList> {
 		listListener = new SourceListChangeListener();
 
 		BoxLayout boxLayout = new BoxLayout(this, BoxLayout.Y_AXIS);
-		setLayout(boxLayout);		
-		
+		setLayout(boxLayout);				
 		if (Beans.isDesignTime()) {			
 			JLabel designTimeCaptionLbl = new JLabel("<ItemsControl>");						
 			this.add(designTimeCaptionLbl);
@@ -63,37 +69,41 @@ public class ItemsControl extends TemplatingParent<ObservableList> {
 	protected void updateChildren() {
 
 		try {
-			// suspend redrawing of this container until we updated all contains
+			// suspend redrawing of this container until we updated all contents
 			// (suppresses flickering)
-			this.setIgnoreRepaint(true);
+			this.setIgnoreRepaint(true);			
 
 			// remove all children of this composite
 			while (this.getComponentCount() > 0) {
+				Component c = this.getComponent(0);
+				if (c instanceof XBinding) {
+					((XBinding)c).unbind();
+				}
+				
 				this.remove(0);
-			}			
+			}				
 
 			// recreate them for the current list value
 			if (itemSource == null || itemControlFactory == null)
 				return;
 
 			if (currentSourceList == null)
-				return;
+				return;					
 
 			for (Object item : currentSourceList) {
 				// instantiate a new child control based on the template class
 				// and pass in the list item as DataContext
 				DataContext itemDataContext = new BeansDataContext(item);
 				Component itemControl = itemControlFactory.create(this, itemDataContext);
-				Object ld_item = itemControlFactory.getLayoutData(getLayout(), itemControl, itemDataContext);
+				Object ld_item = itemControlFactory.getLayoutData(getLayout(), itemControl, itemDataContext);								
 				
 				this.add(itemControl, ld_item);				
-			}
-
-			// relayout the children			
-			this.doLayout();			
+			}				
 		} finally {
-			this.setIgnoreRepaint(false);
-		}
+			// relayout the children
+            this.setIgnoreRepaint(false);
+            this.revalidate();
+		}				
 	}
 
 	class SourceListChangeListener implements ObservableListListener {

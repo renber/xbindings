@@ -62,6 +62,8 @@ import org.jdesktop.beansbinding.util.logging.Logger;
 import org.jdesktop.beansbinding.ext.BeanAdapterFactory;
 import org.jdesktop.observablecollections.ObservableMap;
 import org.jdesktop.observablecollections.ObservableMapListener;
+import org.jdesktop.xbindings.XBinding;
+import org.jdesktop.xbindings.XBindingOptions;
 import org.jdesktop.xbindings.properties.XProperty;
 import org.jdesktop.xbindings.properties.XPropertyAdapterProvider;
 import org.jdesktop.xbindings.properties.XReadOnlyProperty;
@@ -589,10 +591,12 @@ public final class BeanProperty<S, V> extends PropertyHelper<S, V> {
         assert object != null;
         
         // berre: added support for XProperties
-        if (XPropertyAdapterProvider.Adapter.class.isAssignableFrom(object.getClass()) 
-        		|| XReadOnlyPropertyAdapterProvider.Adapter.class.isAssignableFrom(object.getClass())) {
-        	// the property name for the XProperty adapter classes is always value 
-        	string = "value";
+        if (XBindingOptions.getActive().areXPropertiesEnabled()) {
+            if (XPropertyAdapterProvider.Adapter.class.isAssignableFrom(object.getClass())
+                    || XReadOnlyPropertyAdapterProvider.Adapter.class.isAssignableFrom(object.getClass())) {
+                // the property name for the XProperty adapter classes is always value
+                string = "value";
+            }
         }
 
         PropertyDescriptor[] pds = getBeanInfo(object).getPropertyDescriptors();
@@ -882,6 +886,7 @@ public final class BeanProperty<S, V> extends PropertyHelper<S, V> {
         private Object cachedValue;
         private Object cachedWriter;
         private boolean ignoreChange;
+        private boolean wasCleanedUp = false;
 
         private SourceEntry(S source) {
             this.source = source;
@@ -899,6 +904,8 @@ public final class BeanProperty<S, V> extends PropertyHelper<S, V> {
         }
 
         private void cleanup() {
+            wasCleanedUp = true;
+
             for (int i = 0; i < path.length(); i++) {
                 unregisterListener(cache[i], path.get(i), this);
             }
@@ -1102,7 +1109,7 @@ public final class BeanProperty<S, V> extends PropertyHelper<S, V> {
         }
 
         private void mapValueChanged(ObservableMap map, Object key) {
-            if (ignoreChange) {
+            if (ignoreChange || wasCleanedUp) {
                 return;
             }
 
@@ -1126,7 +1133,7 @@ public final class BeanProperty<S, V> extends PropertyHelper<S, V> {
         }
 
         private void propertyValueChanged(PropertyChangeEvent pce) {
-            if (ignoreChange) {
+            if (ignoreChange || wasCleanedUp) {
                 return;
             }
 

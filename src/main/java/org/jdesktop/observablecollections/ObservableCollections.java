@@ -412,5 +412,20 @@ public final class ObservableCollections {
         public boolean supportsElementPropertyChanged() {
             return supportsElementPropertyChanged;
         }
+
+        // ---------------------------------------------
+        // Fix for erroneous list/table binding behavior for
+        // nested ObservableLists
+        // When binding someObject.subObject.list and changing subObject
+        // the list reference is not updated in the table binding when both
+        // lists are empty (-> the lists are considered equal)
+        // ---------------------------------------------
+        @Override
+        public boolean equals(Object other) {
+            // never consider two different ObservableLists to be the same
+            // even if they have they same contents as this breaks nested JTableBindings
+            // e.g. List references are not updated when both lists are empty
+            return this == other;
+        }
     }
 }

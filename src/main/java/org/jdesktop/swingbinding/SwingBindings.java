@@ -36,6 +36,8 @@ import javax.swing.JTable;
 import org.jdesktop.beansbinding.AutoBinding;
 import org.jdesktop.beansbinding.ObjectProperty;
 import org.jdesktop.beansbinding.Property;
+import org.jdesktop.xbindings.context.BeansDataContext;
+import org.jdesktop.xbindings.context.DataContext;
 
 /**
  * A factory class for creating instances of the custom Swing {@code Binding}
@@ -65,6 +67,10 @@ public class SwingBindings {
         return new JListBinding<E, List<E>, JList>(strategy, sourceList,
                 ObjectProperty.<List<E>>create(), targetJList,
                 ObjectProperty.<JList>create(), null);
+    }
+
+    public static JListBinding createJListBinding(DataContext sourceListContext, JList targetJList) {
+        return createJListBinding(AutoBinding.UpdateStrategy.READ, sourceListContext.getSource(), sourceListContext.getPropertyHelper(), targetJList);
     }
 
     /**
@@ -263,6 +269,20 @@ public class SwingBindings {
                 sourceListProperty, targetJTable, ObjectProperty.<JTable>create(),
                 name);
     }
+    
+    /**
+     * Creates a named {@code JTableBinding} from a DataContext that resolves to a {@code List} and a direct reference to a {@code JTable}.
+     *
+     * @param strategy the update strategy
+     * @param sourceListContext a DataContext that resolves to a {@code List} 
+     * @param targetJTable the target {@code JTable}
+     * @return the {@code JTableBinding}
+     * @throws IllegalArgumentException if {@code sourceListProperty} is {@code null}
+     */
+    public static JTableBinding createJTableBinding(
+            AutoBinding.UpdateStrategy strategy, DataContext sourceListContext, JTable targetJTable) {
+            return createJTableBinding(strategy, sourceListContext.getSource(), sourceListContext.getPropertyHelper(), targetJTable);
+    }    
 
     /**
      * Creates a {@code JTableBinding} from a direct reference to a {@code List} and an object and property that resolves to a {@code JTable}.
@@ -371,6 +391,23 @@ public class SwingBindings {
                 ObjectProperty.<JComboBox>create(), name);
     }
 
+    /**
+     * Creates a {@code JComboBoxBinding} from a DataContext that resolves to a {@code List} and a direct reference to a {@code JComboBox}.
+     *
+     * @param strategy the update strategy*
+     * @param targetJComboBox the target {@code JComboBox}
+     * @return the {@code JComboBoxBinding}
+     * @throws IllegalArgumentException if {@code dataContext} is {@code null}
+     */
+    public static JComboBoxBinding createJComboBoxBinding(
+            AutoBinding.UpdateStrategy strategy, DataContext dataContext, JComboBox targetJComboBox) {
+    	if (dataContext == null)
+    		throw new IllegalArgumentException("Parameter dataContetx must not be null.");
+    	
+        return new JComboBoxBinding(strategy, ((BeansDataContext)dataContext).getSource(), ((BeansDataContext)dataContext).getPropertyHelper(), targetJComboBox,
+                ObjectProperty.<JComboBox>create(), null);
+    }
+    
     /**
      * Creates a {@code JComboBoxBinding} from an object and property that resolves to a {@code List} and a direct reference to a {@code JComboBox}.
      *

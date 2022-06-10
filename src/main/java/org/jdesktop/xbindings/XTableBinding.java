@@ -24,24 +24,21 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
-import org.jdesktop.beansbinding.AutoBinding;
+import org.jdesktop.beansbinding.*;
 import org.jdesktop.beansbinding.AutoBinding.UpdateStrategy;
 
 import static org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ;
 import static org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE;
 
 import org.jdesktop.beansbinding.Binding.SyncFailure;
-import org.jdesktop.beansbinding.BeanProperty;
-import org.jdesktop.beansbinding.BindingListener;
-import org.jdesktop.beansbinding.Converter;
-import org.jdesktop.beansbinding.Property;
-import org.jdesktop.beansbinding.PropertyStateEvent;
-import org.jdesktop.beansbinding.PropertyStateListener;
 import org.jdesktop.beansbinding.util.Parameters;
 import org.jdesktop.observablecollections.ObservableList;
 import org.jdesktop.observablecollections.ObservableListListener;
+import org.jdesktop.swingbinding.SwingBindings;
 import org.jdesktop.swingbinding.impl.AbstractColumnBinding;
 import org.jdesktop.swingbinding.impl.ListBindingManager;
+import org.jdesktop.xbindings.context.BeansDataContext;
+import org.jdesktop.xbindings.context.DataContext;
 
 /**
  * Supports binding of table rows and columns to ObservableLists
@@ -73,22 +70,44 @@ public final class XTableBinding implements XBinding, ObservableListListener {
 		bind();
 	}
 
+	public void setSourceList(ObservableList newValue) {
+		if (sourceList != null) {
+			sourceList.removeObservableListListener(this);
+		}
+		sourceList = newValue;
+
+		if (isBound()) {
+			sourceList.addObservableListListener(this);
+			tableModel.clear();
+			tableModel.addAll(sourceList);
+		}
+	}
+
+	public ObservableList getSourceList() {
+		return sourceList;
+	}
+
 	public void bind()
 	{
-		sourceList.addObservableListListener(this);
+		if (!isBound()) {
+			tableModel = new PerfBoundTableModel();
+			if (sourceList != null) {
+				sourceList.addObservableListListener(this);
+				tableModel.addAll(sourceList);
+			}
+			targetTable.setModel(tableModel);
 
-		tableModel = new PerfBoundTableModel();
-		tableModel.addAll(sourceList);
-		targetTable.setModel(tableModel);
-
-		isBound = true;
+			isBound = true;
+		}
 	}
 
 	public void unbind()
 	{
 		targetTable.getSelectionModel().clearSelection();
-		
-		sourceList.removeObservableListListener(this);
+
+		if (sourceList != null) {
+			sourceList.removeObservableListListener(this);
+		}
 
 		if (tableModel != null)
 			tableModel.clear();
@@ -112,10 +131,9 @@ public final class XTableBinding implements XBinding, ObservableListListener {
 	 * Two-way binds the selected (row) elements (multiple selection) of this TableBinding
 	 * to selectedItemsList
 	 * @param selectedItemsList The list which should be synchronized with the selected items
-	 * @param table The target JTable whose selection shall be bound
 	 */
 	public XSelectionBinding bindMultiSelection(ObservableList selectedItemsList) {
-		XTableMultiSelectionBinding bnd = new XTableMultiSelectionBinding(sourceList, selectedItemsList, targetTable);
+		XTableMultiSelectionBinding bnd = new XTableMultiSelectionBinding(new BeansDataContext(sourceList), selectedItemsList, targetTable);
 		targetTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		bnd.bind();
 		
@@ -124,11 +142,20 @@ public final class XTableBinding implements XBinding, ObservableListListener {
 	
 	/**
 	 * Create and establish a new table binding
-	 * @param _sourceList The source list
-	 * @param _targetTable The target JTable whose item source shall be bound
+	 * @param sourceList The source list
+	 * @param targetTable The target JTable whose item source shall be bound
 	 */
 	public static <E> XTableBinding createJTableBinding(ObservableList<E> sourceList, JTable targetTable) {
 		return new XTableBinding(sourceList, targetTable);
+	}
+
+	public static XTableBinding createJTableBinding(DataContext sourceContext, JTable targetTable) {
+		XTableBinding xtb = new XTableBinding((ObservableList)sourceContext.getValue(), targetTable);
+
+		AutoBinding listBinding = Bindings.createAutoBinding(READ, sourceContext.getSource(), sourceContext.getPropertyHelper(), xtb, BeanProperty.create("sourceList"));
+		listBinding.bind();
+
+		return xtb;
 	}
 	
 	/**

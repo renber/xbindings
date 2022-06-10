@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.renber</groupId>
 	<artifactId>xbindings</artifactId>
-	<version>1.5.0-SNAPSHOT</version>	
+	<version>1.6.11-SNAPSHOT</version>
 	<properties>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -16,12 +16,17 @@
 		  <version>4.12</version>
 		  <scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.miglayout</groupId>
+			<artifactId>miglayout</artifactId>
+			<version>3.7.4</version>
+		</dependency>
 	</dependencies>
 	
   <distributionManagement>
 	  <repository>
-	    <id>ce.releases</id>
-	    <url>https://dimple.informatik.tu-chemnitz.de/nexus/content/repositories/releases</url>
+	    <id>ce.deploy</id>
+	    <url>https://dimple.informatik.tu-chemnitz.de/nexus/repository/maven-ce-mkss-releases</url>
 	  </repository>
   </distributionManagement>
 </project>

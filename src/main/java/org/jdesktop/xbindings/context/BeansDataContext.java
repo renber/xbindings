@@ -47,7 +47,12 @@ public class BeansDataContext implements DataContext {
 		if (path.isEmpty())
 			return source;
 		else
-			return getPropertyHelper().getValue(source);
+		{
+			if (getPropertyHelper().isReadable(source))
+				return getPropertyHelper().getValue(source);
+			else
+				return null;
+		}
 	}
 		
 	public PropertyHelper getPropertyHelper() {

@@ -5,6 +5,7 @@ import java.beans.PropertyChangeListener;
 import java.util.List;
 
 import javax.swing.JPanel;
+import javax.swing.Scrollable;
 
 import org.jdesktop.beansbinding.PropertyHelper;
 import org.jdesktop.beansbinding.PropertyStateEvent;
@@ -53,17 +54,17 @@ public abstract class TemplatingParent<TItemSource> extends JPanel {
 	 * 
 	 * @param itemCompositeFactory The factory to use or null to use the default factory of this control
 	 */
-	public void setItemFactory(TemplatingControlFactory itemCompositeFactory) {
-		if (itemCompositeFactory == null)
+	public void setItemFactory(TemplatingControlFactory itemControlFactory) {
+		if (itemControlFactory == null)
 			this.itemControlFactory = getDefaultItemFactory();
 		else
-			this.itemControlFactory = itemCompositeFactory;
+			this.itemControlFactory = itemControlFactory;
 	}
 
 	public TemplatingControlFactory getItemFactory() {
 		return this.itemControlFactory;
 	}
-
+	
 	/**
 	 * Return an instance of the default item factory for this control
 	 * (Must not return null!)

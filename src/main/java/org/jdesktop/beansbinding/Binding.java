@@ -659,10 +659,15 @@ public abstract class Binding<SS, SV, TS, TV> implements XBinding {
 
         TV value;
 
-        // fix by renber: also pass null values to the converter before using the fallback value
+        // change by renber: also pass null values to the converter before using the fallback value
         
         SV rawValue = sourceProperty.getValue(sourceObject);
-        value = convertForward(rawValue);
+        try {
+        	value = convertForward(rawValue);
+        } catch (NullPointerException e) {
+        	// the converter was unable to handle null values
+        	value = null;
+        }
         
         if (value == null) {
         	value = sourceNullValue;

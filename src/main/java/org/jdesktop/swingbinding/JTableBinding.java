@@ -42,15 +42,12 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
-import org.jdesktop.beansbinding.AutoBinding;
+
+import org.jdesktop.beansbinding.*;
 import org.jdesktop.beansbinding.AutoBinding.UpdateStrategy;
 import static org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ;
 import static org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE;
 import org.jdesktop.beansbinding.Binding.SyncFailure;
-import org.jdesktop.beansbinding.BindingListener;
-import org.jdesktop.beansbinding.Property;
-import org.jdesktop.beansbinding.PropertyStateEvent;
-import org.jdesktop.beansbinding.PropertyStateListener;
 import org.jdesktop.beansbinding.util.Parameters;
 import org.jdesktop.swingbinding.impl.AbstractColumnBinding;
 import org.jdesktop.swingbinding.impl.ListBindingManager;
@@ -607,10 +604,13 @@ public final class JTableBinding<E, SS, TS> extends AutoBinding<SS, List<E>, TS,
     public final class ColumnBinding extends AbstractColumnBinding {
 
         private Class<?> columnClass;
-        private boolean editable = true;
         private boolean editableSet;
+        private boolean editable = true;
         private String columnName;
         private Object editingObject;
+
+        // property to evaluate if the column is editable
+        PropertyHelper editableProperty;
 
         // These attributes are just stored here, and applied later when the table is created
         private  TableCellRenderer renderer;
@@ -715,6 +715,25 @@ public final class JTableBinding<E, SS, TS> extends AutoBinding<SS, List<E>, TS,
          */
         public boolean isEditable() {
             return editable;
+        }
+
+        /**
+         * Define the property to evaluate whether a cell of this column is editable
+         */
+        public ColumnBinding setEditableProperty(PropertyHelper editableProperty) {
+            this.editableProperty = editableProperty;
+            return this;
+        }
+
+        /**
+         * Returns whether the cell of the given object is editable
+         */
+        public boolean isEditableForObject(Object rowObject) {
+            if (isEditable() && editableProperty != null) {
+                return (Boolean)editableProperty.getValue(rowObject);
+            }
+
+            return isEditable();
         }
 
         /***************************************************************************************************************
@@ -963,6 +982,10 @@ public final class JTableBinding<E, SS, TS> extends AutoBinding<SS, List<E>, TS,
             ColumnBinding binding = JTableBinding.this.getColumnBinding(columnIndex);
 
             if (!binding.isEditable()) {
+                return false;
+            }
+
+            if (!binding.isEditableForObject(getElement(rowIndex))) {
                 return false;
             }
 

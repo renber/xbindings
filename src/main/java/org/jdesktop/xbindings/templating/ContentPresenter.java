@@ -3,6 +3,7 @@ package org.jdesktop.xbindings.templating;
 import java.awt.BorderLayout;
 import java.awt.Component;
 
+import org.jdesktop.xbindings.XBinding;
 import org.jdesktop.xbindings.context.BeansDataContext;
 import org.jdesktop.xbindings.context.DataContext;
 
@@ -37,6 +38,10 @@ public class ContentPresenter extends TemplatingParent<Object> {
 
 			// remove all children of this composite
 			while (this.getComponentCount() > 0) {
+				if (this.getComponent(0) instanceof XBinding) {
+					((XBinding)this.getComponent(0)).unbind();
+				}
+
 				this.remove(0);
 			}			
 
@@ -55,11 +60,11 @@ public class ContentPresenter extends TemplatingParent<Object> {
 			if (ld_item == null && this.getLayout() instanceof BorderLayout)
 				ld_item = BorderLayout.CENTER;
 				
-			this.add(itemControl, ld_item);							
-
-			// relayout the children			
-			this.doLayout();			
+			this.add(itemControl, ld_item);											
 		} finally {
+			// relayout the children			
+			this.revalidate();
+						
 			this.setIgnoreRepaint(false);
 		}
 	}
